@@ -17,5 +17,6 @@ services:
     volumes:
       - ./addons:/addons
       - ./cfg/server.cfg:/cfg/server.cfg
-      - ./admin.txt:"/ems/admin system/admin.txt"
+      # Admin System
+      - "./admin.txt:/home/louis/l4d2/left4dead2/ems/admin\ system/admin.txt"
     #network_mode: host
