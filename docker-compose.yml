@@ -18,5 +18,5 @@ services:
       - ./addons:/addons
       - ./cfg/server.cfg:/cfg/server.cfg
       # Admin System
-      - "./admin.txt:/home/louis/l4d2/left4dead2/ems/admin\ system/admin.txt"
+      - "./admins.txt:/home/louis/l4d2/left4dead2/ems/admin\ system/admins.txt"
     #network_mode: host
