@@ -17,4 +17,5 @@ services:
     volumes:
       - ./addons:/addons
       - ./cfg/server.cfg:/cfg/server.cfg
+      - ./admin.txt:/ems/admin/admin.txt
     #network_mode: host
