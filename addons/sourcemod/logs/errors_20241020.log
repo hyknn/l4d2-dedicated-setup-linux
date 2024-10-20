@@ -2,3 +2,24 @@ L 10/20/2024 - 04:53:53: SourceMod error session started
 L 10/20/2024 - 04:53:53: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
 L 10/20/2024 - 04:53:53: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
 L 10/20/2024 - 04:54:04: Error log file session closed.
+L 10/20/2024 - 05:46:57: SourceMod error session started
+L 10/20/2024 - 05:46:57: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
+L 10/20/2024 - 05:46:57: [SM] Unable to load extension "left4downtown.ext": vstdlib_linux.so: cannot open shared object file: No such file or directory
+L 10/20/2024 - 05:46:57: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
+L 10/20/2024 - 05:48:02: Error log file session closed.
+L 10/20/2024 - 05:56:59: SourceMod error session started
+L 10/20/2024 - 05:56:59: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
+L 10/20/2024 - 05:56:59: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
+L 10/20/2024 - 05:57:05: Error log file session closed.
+L 10/20/2024 - 06:17:00: SourceMod error session started
+L 10/20/2024 - 06:17:00: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
+L 10/20/2024 - 06:17:00: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
+L 10/20/2024 - 06:17:13: Error log file session closed.
+L 10/20/2024 - 06:43:07: SourceMod error session started
+L 10/20/2024 - 06:43:07: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
+L 10/20/2024 - 06:43:07: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
+L 10/20/2024 - 06:43:39: Error log file session closed.
+L 10/20/2024 - 06:50:40: SourceMod error session started
+L 10/20/2024 - 06:50:40: Info (map "c14m1_junkyard") (file "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/errors_20241020.log")
+L 10/20/2024 - 06:50:40: [SM] Failed to load plugin "nextmap.smx": Nextmap is incompatible with this game.
+L 10/20/2024 - 06:50:47: Error log file session closed.
