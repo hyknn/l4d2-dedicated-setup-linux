@@ -1,12 +1,20 @@
+version: "3.0"
 
 services:
   l4d2:
     image: left4devops/l4d2
     restart: unless-stopped
+    container_name: l4d2-server
+    env_file: .env
     environment:
-      - HOSTNAME=""
-      - STEAM_GROUP=""
+      - "HOSTNAME=${HOSTNAME}"
+      - "REGION=4"
+      - "STEAM_GROUP=${STEAMGROUP}"
+      - "DEFAULT_MAP=c1m1_hotel"
+    ports:
+      - "27015:27015/tcp"
+      - "27015:27015/udp"
     volumes:
       - ./addons:/addons
       - ./cfg/server.cfg:/cfg/server.cfg
-    network_mode: host
+    #network_mode: host
