@@ -1,0 +1,11 @@
+services:
+  l4d2:
+    image: left4devops/l4d2
+    restart: unless-stopped
+    environment:
+      - HOSTNAME=""
+      - STEAM_GROUP=""
+    volumes:
+      - ./addons:/addons
+      - ./cfg/server.cfg:/cfg/server.cfg
+    network_mode: host
