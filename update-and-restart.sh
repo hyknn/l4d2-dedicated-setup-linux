@@ -7,7 +7,7 @@ if [ -f "workshop.py" ]; then
         echo "workshop.py is already executable."
     else
         # Make the file executable
-        chmod +x "./workshop.py"
+        sudo chmod +x "./workshop.py"
         echo "Executable permissions added to workshop.py"
     fi
 
