@@ -25,8 +25,10 @@ if [ -f "workshop.py" ]; then
     fi
 
     # Update workshop
-    echo "Updating workshop with ID 3351861747 3352114089"
-    ./workshop.py -o addons/workshop 3351861747 3352114089
+    echo "Updating workshop with ID 3351861747"
+    ./workshop.py -o addons/workshop 3351861747
+    echo "Updating workshop with ID 3352114089"
+    ./workshop.py -o addons/workshop 3352114089
     echo "Workshop files updated successfully."
 
     # Restart container
