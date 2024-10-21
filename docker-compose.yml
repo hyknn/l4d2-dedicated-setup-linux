@@ -2,9 +2,8 @@ version: "3.0"
 
 services:
   l4d2:
-    image: left4devops/l4d2
+    build: .
     restart: unless-stopped
-    container_name: l4d2-server
     env_file: .env
     environment:
       - HOSTNAME=${HOSTNAME}
