@@ -11,7 +11,6 @@ services:
       - REGION=4
       - STEAM_GROUP=${STEAMGROUP}
       - DEFAULT_MAP=c1m1_hotel
-      - GAME_TYPES="coop"
     ports:
       - "27015:27015/tcp"
       - "27015:27015/udp"
@@ -20,6 +19,4 @@ services:
       # Server Config
       - ./cfg/server.cfg:/cfg/server.cfg
       - ./cfg/server_rates.cfg:/cfg/server_rates.cfg
-      # Admin System
-      - "./admins.txt:/home/louis/l4d2/left4dead2/ems/admin\ system/admins.txt"
     #network_mode: host
