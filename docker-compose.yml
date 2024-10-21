@@ -18,7 +18,4 @@ services:
       # Server Config
       - ./cfg/server.cfg:/cfg/server.cfg
       - ./cfg/server_rates.cfg:/cfg/server_rates.cfg
-      # Auto Items Spawn
-      # https://forums.alliedmods.net/showthread.php?t=116376
-      - ./materials:/home/louis/l4d2/left4dead2/materials
     #network_mode: host
