@@ -15,6 +15,10 @@ services:
       - "27015:27015/udp"
     volumes:
       - ./addons:/addons
+      # Sourcemod Config
+      - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
+      - ./cfg/sourcemod/sm_warmode_on.cfg:/cfg/sourcemod/sm_warmode_on.cfg
+      - ./cfg/sourcemod/sm_warmode_off.cfg:/cfg/sourcemod/sm_warmode_off.cfg
       # Server Config
       - ./cfg/server.cfg:/cfg/server.cfg
       - ./cfg/server_rates.cfg:/cfg/server_rates.cfg
