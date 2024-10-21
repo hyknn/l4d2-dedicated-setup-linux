@@ -7,10 +7,11 @@ services:
     container_name: l4d2-server
     env_file: .env
     environment:
-      - "HOSTNAME=${HOSTNAME}"
-      - "REGION=4"
-      - "STEAM_GROUP=${STEAMGROUP}"
-      - "DEFAULT_MAP=c1m1_hotel"
+      - HOSTNAME=${HOSTNAME}
+      - REGION=4
+      - STEAM_GROUP=${STEAMGROUP}
+      - DEFAULT_MAP=c1m1_hotel
+      - GAME_TYPES="coop"
     ports:
       - "27015:27015/tcp"
       - "27015:27015/udp"
