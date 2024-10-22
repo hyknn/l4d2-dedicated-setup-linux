@@ -17,6 +17,7 @@ services:
       - ./addons:/addons
       # Server Config
       - ./cfg/server.cfg:/cfg/server.cfg
+      - ./cfg/server_rates.cfg:/cfg/server_rates.cfg
       # ABM
       - ./cfg/sourcemod/abm.cfg:/cfg/sourcemod/abm.cfg
     #network_mode: host
