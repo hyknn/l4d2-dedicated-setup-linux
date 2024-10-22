@@ -4,10 +4,17 @@
 	{
 		"Offsets"
 		{
+			// found on CBaseUpgradeItem::Use
+			//
+			//.text:008C4543                 call    _ZN16CBaseUpgradeItem20MarkAsUsedBySurvivorE21SurvivorCharacterType ; CBaseUpgradeItem::MarkAsUsedBySurvivor(SurvivorCharacterType)
+			//.text:008C4548                 mov     eax, [edi+1440h]
+			//.text:008C454E                 sub     eax, 1
+			//.text:008C4551                 mov     [edi+1440h], eax
+
 			"m_iUpgradePackCanUseCount"
 			{
-				"windows"	"5172"
-				"linux"		"5180"
+				"windows"	"5188"
+				"linux"		"5196"
 			}
 
 		}
@@ -16,7 +23,7 @@
 			"CTerrorPlayer::FindUseEntity"
 			{
 				"library"	"server"
-				"windows"	"\xB8*\x13\x00\x00\xE8****\xD9\xEE\xD9\x84\x24*\x13\x00\x00"
+				"windows"	"\x55\x8B\xEC\xB8**\x00\x00\xE8****\xA1****\x33\xC5\x89\x45*\x0F\x57\xC9"
 				"linux"		"@_ZN13CTerrorPlayer13FindUseEntityEfffPbb"
 			}
 		}
