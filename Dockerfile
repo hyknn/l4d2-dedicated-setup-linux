@@ -13,6 +13,4 @@ COPY --chown=louis ["./admins.txt", "/home/louis/l4d2/left4dead2/ems/admin syste
 # Left 4 Bots
 COPY --chown=louis ["./left4bots/admins.txt", "/home/louis/l4d2/left4dead2/ems/left4lib/cfg/admins.txt"]
 COPY --chown=louis ["./left4bots/settings.txt", "/home/louis/l4d2/left4dead2/ems/left4bots/cfg/settings.txt"]
-
-# Left 4 Bots 2
 COPY --chown=louis ["./left4bots2/settings.txt", "/home/louis/l4d2/left4dead2/ems/left4bots2/cfg/settings.txt"]
