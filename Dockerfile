@@ -5,6 +5,7 @@ RUN mkdir -p "/home/louis/l4d2/left4dead2/cfg/sourcemod/"
 RUN mkdir -p "/home/louis/l4d2/left4dead2/addons/sourcemod/logs/"
 RUN mkdir -p "/home/louis/l4d2/left4dead2/ems/admin system/"
 RUN mkdir -p "/home/louis/l4d2/left4dead2/ems/left4bots/cfg/"
+RUN mkdir -p "/home/louis/l4d2/left4dead2/ems/left4bots2/cfg/"
 
 # Copy the initial admins.txt file from the host to the container
 COPY --chown=louis ["./admins.txt", "/home/louis/l4d2/left4dead2/ems/admin system/admins.txt"]
@@ -12,4 +13,6 @@ COPY --chown=louis ["./admins.txt", "/home/louis/l4d2/left4dead2/ems/admin syste
 # Left 4 Bots
 COPY --chown=louis ["./left4bots/admins.txt", "/home/louis/l4d2/left4dead2/ems/left4lib/cfg/admins.txt"]
 COPY --chown=louis ["./left4bots/settings.txt", "/home/louis/l4d2/left4dead2/ems/left4bots/cfg/settings.txt"]
+
+# Left 4 Bots 2
 COPY --chown=louis ["./left4bots2/settings.txt", "/home/louis/l4d2/left4dead2/ems/left4bots2/cfg/settings.txt"]
