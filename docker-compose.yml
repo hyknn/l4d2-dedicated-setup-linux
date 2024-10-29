@@ -10,6 +10,7 @@ services:
       - REGION=4
       - STEAM_GROUP=${STEAMGROUP}
       - DEFAULT_MAP=c1m1_hotel
+      - EXTRA_ARGS="-tickrate 60"
     ports:
       - "27015:27015/tcp"
       - "27015:27015/udp"
