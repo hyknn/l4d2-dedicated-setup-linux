@@ -23,4 +23,9 @@ services:
       # Multislots
       - ./cfg/sourcemod/l4dmultislots.cfg:/cfg/sourcemod/l4dmultislots.cfg
       - ./cfg/sourcemod/l4d2_character_manager.cfg:/cfg/sourcemod/l4d2_character_manager.cfg
-    #network_mode: host
+#network_mode: host
+networks:
+  backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1280
