@@ -9,6 +9,7 @@ services:
       - HOSTNAME=${HOSTNAME}
       - REGION=4
       - STEAM_GROUP=${STEAMGROUP}
+      - STEAM_GROUP_EXCLUSIVE=false
       - DEFAULT_MAP=c1m1_hotel
     ports:
       - "27015:27015/tcp"
