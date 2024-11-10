@@ -18,7 +18,6 @@ services:
       - ./addons:/addons
       # Sourcemod
       - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
-      - ./cfg/sourcemod/l4d_dynamic_light.cfg:/cfg/sourcemod/l4d_dynamic_light.cfg
       # Multislots
       - ./cfg/sourcemod/l4dmultislots.cfg:/cfg/sourcemod/l4dmultislots.cfg
       # Server Config
