@@ -16,8 +16,17 @@ services:
       - "27015:27015/udp"
     volumes:
       - ./addons:/addons
-      # Load All Config
-      - ./cfg:/cfg
+      # Sourcemod
+      - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
+      # Server Config
+      - ./cfg/server.cfg:/cfg/server.cfg
+      - ./cfg/server_rates.cfg:/cfg/server_rates.cfg
+      # Multislots
+      - ./cfg/sourcemod/l4dmultislots.cfg:/cfg/sourcemod/l4dmultislots.cfg
+      - ./cfg/sourcemod/l4d2_character_manager.cfg:/cfg/sourcemod/l4d2_character_manager.cfg
+      # Balancer
+      - ./cfg/sourcemod/balancer_hp.cfg:/cfg/sourcemod/balancer_hp.cfg
+      - ./cfg/sourcemod/l4d2_balancer_spawn.cfg:/cfg/sourcemod/l4d2_balancer_spawn.cfg
 #network_mode: host
 networks:
   backend:
