@@ -18,6 +18,7 @@ services:
       - ./addons:/addons
       # Sourcemod
       - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
+      - ./cfg/sourcemod/l4d2_character_manager.cfg:/cfg/sourcemod/l4d2_character_manager.cfg
       # Multislots
       - ./cfg/sourcemod/l4dmultislots.cfg:/cfg/sourcemod/l4dmultislots.cfg
       # Server Config
