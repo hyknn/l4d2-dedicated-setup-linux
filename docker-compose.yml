@@ -16,6 +16,7 @@ services:
       - "27015:27015/udp"
     volumes:
       - ./addons:/addons
+      - ./logs:/home/louis/l4d2/left4dead2/l4d2/left4dead2/logs
       # Sourcemod
       - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
       # Multislots
