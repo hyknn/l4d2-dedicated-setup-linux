@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION 		"1.0"
+#define PLUGIN_VERSION "1.0"
 
 /*======================================================================================
 	Plugin Info:
@@ -21,14 +21,14 @@
 #include <sourcemod>
 #include <sdktools>
 
-public Plugin myinfo=
+public Plugin myinfo =
 {
 	name = "Finale rescue vehicle mover for 4+ survivors",
 	author = "sorallll",
 	description = "Properly moves extra 4+ survivors to their intended location during finale rescue sequences",
-	version = "1.0",
+	version = PLUGIN_VERSION,
 	url = "https://forums.alliedmods.net/showpost.php?p=2771140&postcount=49"
-}
+};
 
 public void OnPluginStart()
 {
@@ -38,24 +38,42 @@ public void OnPluginStart()
 void Event_FinaleVehicleLeaving(Event event, const char[] name, bool dontBroadcast)
 {
 	int entity = FindEntityByClassname(MaxClients + 1, "info_survivor_position");
-	if(entity == INVALID_ENT_REFERENCE)
+	if (entity == INVALID_ENT_REFERENCE)
+	{
 		return;
+	}
 
 	float vOrigin[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", vOrigin);
 
-	int iSurvivor;
 	static const char sOrder[][] = {"1", "2", "3", "4"};
-	for(int i = 1; i <= MaxClients; i++)
+	int iSurvivor = 0;
+
+	for (int client = 1; client <= MaxClients; client++)
 	{
-		if(!IsClientInGame(i) || GetClientTeam(i) != 2)
+		if (!IsClientInGame(client) || GetClientTeam(client) != 2)
+		{
 			continue;
-			
-		if(++iSurvivor < 4)
+		}
+
+		iSurvivor++;
+
+		// Skip the first 4 survivors; they already have valid positions.
+		if (iSurvivor <= 4)
+		{
 			continue;
-			
+		}
+
+		int extraIndex = (iSurvivor - 1) % 4; // Cycle through 0-3 for "Order" values.
 		entity = CreateEntityByName("info_survivor_position");
-		DispatchKeyValue(entity, "Order", sOrder[iSurvivor - RoundToFloor(iSurvivor / 4.0) * 4]);
+
+		if (entity == INVALID_ENT_REFERENCE)
+		{
+			PrintToServer("[Finale Mover] Failed to create 'info_survivor_position' entity.");
+			continue;
+		}
+
+		DispatchKeyValue(entity, "Order", sOrder[extraIndex]);
 		TeleportEntity(entity, vOrigin, NULL_VECTOR, NULL_VECTOR);
 		DispatchSpawn(entity);
 	}
