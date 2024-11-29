@@ -8,28 +8,31 @@
 #include <left4dhooks>
 #include <multicolors>
 
-#define PLUGIN_VERSION 		"2.1-2024/9/14"
+#define PLUGIN_VERSION 		"2.2-2024/11/25"
 #define PLUGIN_NAME			"l4d_rescue_vehicle_leave_timer"
 #define DEBUG 0
 
 public Plugin myinfo =
 {
-	name = "[L4D2] Rescue vehicle leave timer",
+	name = "[L4D1/2] Rescue vehicle leave timer",
 	author = "HarryPotter",
 	description = "When rescue vehicle arrived and a timer will display how many time left for vehicle leaving. If a player is not on rescue vehicle or zone, slay him",
 	version = PLUGIN_VERSION,
 	url = "https://steamcommunity.com/profiles/76561198026784913/"
 }
 
+bool g_bL4D2Version;
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	EngineVersion test = GetEngineVersion();
 
-	if( test != Engine_Left4Dead2)
+	if( test != Engine_Left4Dead && test != Engine_Left4Dead2 )
 	{
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
+
+	g_bL4D2Version = (test == Engine_Left4Dead2);
 
 	return APLRes_Success;
 }
@@ -41,12 +44,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 #define CVAR_FLAGS			FCVAR_NOTIFY
 #define SOUND_ESCAPE		"ambient/alarms/klaxon1.wav"
 
+#define EXPLOSION_SOUND 	"ambient/explosions/explode_1.wav"
 #define NUKE_SOUND_L4D2 "animation/overpass_jets.wav"
-#define EXPLOSION_SOUND_L4D2 "ambient/explosions/explode_1.wav"
 #define EXPLOSION_DEBRIS_L4D2 "animation/plantation_exlposion.wav"
 #define FIRE_PARTICLE "gas_explosion_ground_fire"
 #define EXPLOSION_PARTICLE_L4D2 "FluidExplosion_fps"
-#define SPRITE_MODEL "sprites/muzzleflash4.vmt"
 
 #define FFADE_IN            0x0001
 #define FFADE_OUT           0x0002
@@ -101,13 +103,15 @@ ConVar g_hCvarMPGameMode;
 ConVar g_hCvarAllow, g_hCvarModes, g_hCvarModesOff, g_hCvarModesTog, g_hCvarAnnounceType, g_hCvarEscapeTime, g_hCvarAirStrike;
 int g_iRoundStart, g_iPlayerSpawn, g_iEscapeTime, g_iCvarEscapeTime;
 
-int iSystemTime, g_iRescueVehicle;
-bool g_bFinalHasTrigger_Multiple, g_bFinalVehicleReady, g_bFinalVehicleLeaving, g_bCvarAirStrike;
-bool g_bClientInVehicle[MAXPLAYERS+1], g_bMapStarted, g_bValidMap, g_bHookStart;
+int iSystemTime;
+int g_iRescueVehicle;
+bool g_bFinalHasTrigger_Multiple, g_bFinalVehicleLeaving, g_bCvarAirStrike;
+bool g_bMapStarted, g_bValidMap, g_bHookStart;
 Handle AntiPussyTimer, _AntiPussyTimer, AirstrikeTimer;
 
-Handle
-	g_hSDK_CDirectorChallengeMode_FindRescueAreaTrigger;
+Address TheNavMesh;
+int g_iOffs_m_pRescueVehicleDepthArea = -1;
+Handle g_hSDK_CBaseTrigger_IsTouching;
 
 public void OnPluginStart()
 {
@@ -115,12 +119,15 @@ public void OnPluginStart()
 	if (!hGameData)
 		SetFailState("Failed to load \"%s.txt\" gamedata.", GAMEDATA_FILE);
 
-	StartPrepSDKCall(SDKCall_GameRules);
-	if (!PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirectorChallengeMode::FindRescueAreaTrigger"))
-		SetFailState("Failed to find signature: CDirectorChallengeMode::FindRescueAreaTrigger");
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	if (!(g_hSDK_CDirectorChallengeMode_FindRescueAreaTrigger = EndPrepSDKCall()))
-		SetFailState("Failed to create SDKCall: CDirectorChallengeMode::FindRescueAreaTrigger");
+	g_iOffs_m_pRescueVehicleDepthArea = hGameData.GetOffset("TerrorNavMesh::m_pRescueVehicleDepthArea");
+
+	StartPrepSDKCall(SDKCall_Entity);
+	if (!PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CBaseTrigger::IsTouching"))
+		SetFailState("Failed to find signature: CBaseTrigger::IsTouching");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+	if (!(g_hSDK_CBaseTrigger_IsTouching = EndPrepSDKCall()))
+		SetFailState("Failed to create SDKCall: CBaseTrigger::IsTouching");
 
 	delete hGameData;
 
@@ -132,7 +139,7 @@ public void OnPluginStart()
 	g_hCvarModesTog =		CreateConVar(	"l4d_rescue_vehicle_leave_timer_modes_tog",				"0",			"Turn on the plugin in these game modes. 0=All, 1=Coop, 2=Survival, 4=Versus, 8=Scavenge. Add numbers together.", CVAR_FLAGS );
 	g_hCvarAnnounceType	= 	CreateConVar(	"l4d_rescue_vehicle_leave_timer_announce_type", 		"2", 			"Changes how count down tumer hint displays. (0: Disable, 1:In chat, 2: In Hint Box, 3: In center text)", FCVAR_NOTIFY, true, 0.0, true, 3.0);
 	g_hCvarEscapeTime	= 	CreateConVar(	"l4d_rescue_vehicle_leave_timer_escape_time_default", 	"60", 			"Default time to escape.", FCVAR_NOTIFY, true, 1.0);
-	g_hCvarAirStrike	= 	CreateConVar(	"l4d_rescue_vehicle_leave_timer_airstrike_enable", 		"1", 			"If 1, Enable AirStrike (explosion, missile, jets, fire)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_hCvarAirStrike	= 	CreateConVar(	"l4d_rescue_vehicle_leave_timer_airstrike_enable", 		"1", 			"(L4D2) If 1, Enable AirStrike (explosion, missile, jets, fire)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	CreateConVar(							"l4d_rescue_vehicle_leave_timer_version",		PLUGIN_VERSION,	"Rescue vehicle leave timer plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	AutoExecConfig(true,					"l4d_rescue_vehicle_leave_timer");
 
@@ -147,7 +154,6 @@ public void OnPluginStart()
 	g_hCvarAnnounceType.AddChangeHook(ConVarChanged_Cvars);
 	g_hCvarEscapeTime.AddChangeHook(ConVarChanged_Cvars);
 	g_hCvarAirStrike.AddChangeHook(ConVarChanged_Cvars);
-
 }
 
 public void OnPluginEnd()
@@ -157,6 +163,8 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	TheNavMesh = L4D_GetPointer(POINTER_NAVMESH);
+
 	g_bMapStarted = true;
 	g_bValidMap = true;
 	
@@ -168,20 +176,22 @@ public void OnMapStart()
 	if(g_bValidMap)
 	{
 		PrecacheSound(SOUND_ESCAPE, true);
-		PrecacheSound(NUKE_SOUND_L4D2);
-		PrecacheSound(EXPLOSION_SOUND_L4D2);
-		PrecacheSound(EXPLOSION_DEBRIS_L4D2);
-		PrecacheParticle(EXPLOSION_PARTICLE_L4D2);
-		for(int i = 0; i < 6; i++)
+		PrecacheSound(EXPLOSION_SOUND);
+		if(g_bL4D2Version)
 		{
-			PrecacheSound(F18_Sounds[i], true);
+			PrecacheSound(NUKE_SOUND_L4D2);
+			PrecacheSound(EXPLOSION_DEBRIS_L4D2);
+			PrecacheParticle(EXPLOSION_PARTICLE_L4D2);
+			for(int i = 0; i < 6; i++)
+			{
+				PrecacheSound(F18_Sounds[i], true);
+			}
+
+			PrecacheModel("models/f18/f18_sb.mdl", true);
+			PrecacheModel("models/missiles/f18_agm65maverick.mdl", true);
+
+			PrecacheParticle(FIRE_PARTICLE);
 		}
-
-		PrecacheModel("models/f18/f18_sb.mdl", true);
-		PrecacheModel("models/missiles/f18_agm65maverick.mdl", true);
-
-		PrecacheParticle(FIRE_PARTICLE);
-		PrecacheModel(SPRITE_MODEL, true);
 	}
 }
 
@@ -344,34 +354,33 @@ void OnNextFrame_trigger_finale(int entityRef)
 	if(g_bValidMap == false) return;
 	if(g_iEscapeTime == 0) return;
 
-	bool bIsSacrificeFinale = view_as<bool>(GetEntProp(entity, Prop_Data, "m_bIsSacrificeFinale"));
-	if(bIsSacrificeFinale)
+	if(g_bL4D2Version)
 	{
-		#if DEBUG
-			LogMessage("\x05Map is sacrifice finale, disable the plugin");
-		#endif
+		bool bIsSacrificeFinale = view_as<bool>(GetEntProp(entity, Prop_Data, "m_bIsSacrificeFinale"));
+		if(bIsSacrificeFinale)
+		{
+			#if DEBUG
+				LogMessage("\x05Map is sacrifice finale, disable the plugin");
+			#endif
 
-		return;
+			return;
+		}
 	}
 
 	entity = MaxClients + 1;
 	while ((entity = FindEntityByClassname(entity, "trigger_multiple")) != -1)
 	{
+		if( !IsValidEntity(entity) )
+			continue;
+
 		if( GetEntProp(entity, Prop_Data, "m_iEntireTeam") != 2 )
 			continue;
 
 		if( !(GetEntProp(entity, Prop_Data, "m_spawnflags") & 1) )
 			continue;
 
-		#if DEBUG
-			LogMessage("trigger_multiple %d HookSingleEntityOutput", entity);
-		#endif
-
-		UnhookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-		UnhookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
-		HookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-		HookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
 		g_bFinalHasTrigger_Multiple = true;
+		break;
 	}
 }
 
@@ -382,17 +391,19 @@ void OnNextFrame_trigger_multiple(int entityRef)
 	if (entity == INVALID_ENT_REFERENCE)
 		return;
 
-	#if DEBUG
-		LogMessage("\x05trigger_multiple late spawn here");
-	#endif
-
 	if(g_bValidMap == false) return;
 	if(g_iEscapeTime == 0) return;
 
-	UnhookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-	UnhookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
-	HookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-	HookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
+	if( GetEntProp(entity, Prop_Data, "m_iEntireTeam") != 2 )
+		return;
+
+	if( !(GetEntProp(entity, Prop_Data, "m_spawnflags") & 1) )
+		return;
+
+	#if DEBUG
+		LogMessage("trigger_multiple %d HookSingleEntityOutput", entity);
+	#endif
+
 	g_bFinalHasTrigger_Multiple = true;
 }
 
@@ -464,9 +475,7 @@ void Finale_Vehicle_Leaving(Event event, const char[] name, bool dontBroadcast)
 
 void Finale_Vehicle_Ready(Event event, const char[] name, bool dontBroadcast)
 {
-	g_bFinalVehicleReady = true;
-
-	//if(g_bIsSacrificeFinale || !IsValidEntRef(g_iTriggerFinale) || g_iEscapeTime == 0) return;
+	//if(g_bIsSacrificeFinale || g_iEscapeTime == 0) return;
 
 	if(!g_bFinalHasTrigger_Multiple) return;
 	
@@ -474,7 +483,7 @@ void Finale_Vehicle_Ready(Event event, const char[] name, bool dontBroadcast)
 	delete AntiPussyTimer;
 	AntiPussyTimer = CreateTimer(1.0, Timer_AntiPussy, _, TIMER_REPEAT);
 
-	if(g_bCvarAirStrike)
+	if(g_bL4D2Version && g_bCvarAirStrike)
 	{
 		delete AirstrikeTimer;
 		AirstrikeTimer = CreateTimer(2.5, Timer_StartAirstrike, _, TIMER_REPEAT);
@@ -506,7 +515,13 @@ Action Timer_AntiPussy(Handle timer)
 
 	if(iSystemTime <= 1)
 	{
-		if(g_bCvarAirStrike) EmitSoundToAll(NUKE_SOUND_L4D2);
+		int iRescueVehicle = FindRescueAreaTrigger();
+		if(iRescueVehicle > MaxClients)
+		{
+			g_iRescueVehicle = EntIndexToEntRef(iRescueVehicle);
+		}
+
+		if(g_bL4D2Version && g_bCvarAirStrike) EmitSoundToAll(NUKE_SOUND_L4D2);
 
 		CPrintToChatAll("{default}[{olive}TS{default}] %t", "Outside Slay");
 		delete _AntiPussyTimer;
@@ -531,7 +546,7 @@ Action Timer_Strike(Handle timer)
 		{
 			if(IsInFinalRescueVehicle(i)) continue;
 			
-			if(g_bCvarAirStrike) 
+			if(g_bL4D2Version && g_bCvarAirStrike) 
 			{
 				//explosion effect and fade
 				CreateTimer(GetRandomFloat(0.0, 0.5), Timer_Explode, GetClientUserId(i), TIMER_FLAG_NO_MAPCHANGE);
@@ -590,57 +605,24 @@ bool LoadData()
 
 void ResetPlugin()
 {
-	if( g_bFinalHasTrigger_Multiple )
-	{
-		int entity = -1;
-		while ((entity = FindEntityByClassname(entity, "trigger_multiple")) != -1)
-		{
-			UnhookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-			UnhookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
-		}
-	}
-
 	g_iRoundStart = 0;
 	g_iPlayerSpawn = 0;
 	g_bFinalHasTrigger_Multiple = false;
-	g_bFinalVehicleReady = false;
-
-	for( int i = 1; i <= MaxClients; i++ ) 
-	{
-		g_bClientInVehicle[i] = false;
-	}
 
 	delete AntiPussyTimer;
 	delete _AntiPussyTimer;
 	delete AirstrikeTimer;
 }
-/*
+
 bool IsInFinalRescueVehicle(int client)
 {
-	return IsPlayerInEndArea(client);
-}
-*/
-bool IsInFinalRescueVehicle(int client)
-{
-	float pos[3];
-	GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
-
-	Address area = L4D_GetNearestNavArea(pos);
-	if (area == Address_Null)
+	if(IsValidEntRef(g_iRescueVehicle))
 	{
-		return g_bClientInVehicle[client];
+		//PrintToChatAll("%N- %d", client, SDKCall(g_hSDK_CBaseTrigger_IsTouching, g_iRescueVehicle, client));
+		return SDKCall(g_hSDK_CBaseTrigger_IsTouching, g_iRescueVehicle, client);
 	}
 
-	int spawnAttributes = L4D_GetNavArea_SpawnAttributes(area);
-
-	if (spawnAttributes & NAV_SPAWN_RESCUE_VEHICLE)
-	{
-		return g_bClientInVehicle[client];
-	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
 void PrecacheParticle(const char[] sEffectName)
@@ -716,34 +698,8 @@ void CreateExplosion(const float pos[3], const float duration = 30.0)
 		AcceptEntityInput(ent, "AddOutput");
 		AcceptEntityInput(ent, "FireUser1");
 	}
-	/*if((ent = CreateEntityByName("env_explosion")) != -1)
-	{
-		DispatchKeyValue(ent, "fireballsprite", SPRITE_MODEL);
-		DispatchKeyValue(ent, "iMagnitude", "1");
-		DispatchKeyValue(ent, "iRadiusOverride", "1");
-		DispatchKeyValue(ent, "spawnflags", "828");
-		TeleportEntity(ent, pos, NULL_VECTOR, NULL_VECTOR);
-		DispatchSpawn(ent);
 
-		AcceptEntityInput(ent, "Explode");
-		SetVariantString(buffer);
-		AcceptEntityInput(ent, "AddOutput");
-		AcceptEntityInput(ent, "FireUser1");
-	}
-	if((ent = CreateEntityByName("env_physexplosion")) != -1)
-	{
-		DispatchKeyValue(ent, "radius", "1");
-		DispatchKeyValue(ent, "magnitude", "1");
-		TeleportEntity(ent, pos, NULL_VECTOR, NULL_VECTOR);
-		DispatchSpawn(ent);
-
-		AcceptEntityInput(ent, "Explode");
-		SetVariantString(buffer);
-		AcceptEntityInput(ent, "AddOutput");
-		AcceptEntityInput(ent, "FireUser1");
-	}*/
-
-	EmitAmbientSound(EXPLOSION_SOUND_L4D2, pos);
+	EmitAmbientSound(EXPLOSION_SOUND, pos);
 	EmitAmbientSound(EXPLOSION_DEBRIS_L4D2, pos);
 }
 
@@ -770,6 +726,8 @@ Action Timer_SlayPlayer(Handle timer, int userid)
 	int client = GetClientOfUserId(userid);
 	if(client && IsClientInGame(client) && GetClientTeam(client) == TEAM_SURVIVORS && IsPlayerAlive(client))
 	{
+		if(IsInFinalRescueVehicle(client)) return Plugin_Continue;
+
 		ForcePlayerSuicide(client);
 		//hint
 		CPrintToChat(client, "{default}[{olive}TS{default}] %T", "You have been executed for not being on rescue vehicle or zone!", client);
@@ -787,14 +745,17 @@ void InitRescueEntity()
 	int entity = FindEntityByClassname(MaxClients + 1, "trigger_finale");
 	if(entity > MaxClients && IsValidEntity(entity))
 	{
-		bool bIsSacrificeFinale = view_as<bool>(GetEntProp(entity, Prop_Data, "m_bIsSacrificeFinale"));
-		if(bIsSacrificeFinale)
+		if(g_bL4D2Version)
 		{
-			#if DEBUG
-				LogMessage("\x05Map is sacrifice finale, disable the plugin");
-			#endif
+			bool bIsSacrificeFinale = view_as<bool>(GetEntProp(entity, Prop_Data, "m_bIsSacrificeFinale"));
+			if(bIsSacrificeFinale)
+			{
+				#if DEBUG
+					LogMessage("\x05Map is sacrifice finale, disable the plugin");
+				#endif
 
-			return;
+				return;
+			}
 		}
 	}
 	else
@@ -805,79 +766,11 @@ void InitRescueEntity()
 	entity = MaxClients + 1;
 	while ((entity = FindEntityByClassname(entity, "trigger_multiple")) != -1)
 	{
-		if( GetEntProp(entity, Prop_Data, "m_iEntireTeam") != 2 )
-			continue;
+		if(!IsValidEntity(entity)) continue;
 
-		if( !(GetEntProp(entity, Prop_Data, "m_spawnflags") & 1) )
-			continue;
-
-		#if DEBUG
-			LogMessage("trigger_multiple %d HookSingleEntityOutput", entity);
-		#endif
-
-		UnhookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-		UnhookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
-		HookSingleEntityOutput(entity, "OnStartTouch", OnStartTouch);
-		HookSingleEntityOutput(entity, "OnEndTouch", OnEndTouch);
 		g_bFinalHasTrigger_Multiple = true;
+		break;
 	}
-}
-
-void OnStartTouch(const char[] output, int caller, int activator, float delay)
-{
-	if (g_bFinalVehicleReady && activator > 0 && activator <= MaxClients && IsClientInGame(activator))
-	{
-		//PrintToChatAll("%d %d", caller, SDKCall(g_hSDK_CDirectorChallengeMode_FindRescueAreaTrigger));
-		if(!IsValidEntRef(g_iRescueVehicle))
-		{
-			if (caller != SDKCall(g_hSDK_CDirectorChallengeMode_FindRescueAreaTrigger))
-				return;
-
-			g_iRescueVehicle = EntIndexToEntRef(caller);
-		}
-		else
-		{
-			if(g_iRescueVehicle != EntIndexToEntRef(caller)) 
-				return;
-		}
-
-		#if DEBUG
-			PrintToChatAll("OnStartTouch, caller: %d, activator: %d", caller, activator);
-		#endif
-		g_bClientInVehicle[activator] = true;
-	}
-}
-
-void OnEndTouch(const char[] output, int caller, int activator, float delay)
-{
-	if (g_bFinalVehicleReady && activator > 0 && activator <= MaxClients && IsClientInGame(activator))
-	{
-		if(!IsValidEntRef(g_iRescueVehicle))
-		{
-			if (caller != SDKCall(g_hSDK_CDirectorChallengeMode_FindRescueAreaTrigger))
-				return;
-
-			g_iRescueVehicle = EntIndexToEntRef(caller);
-		}
-		else
-		{
-			if(g_iRescueVehicle != EntIndexToEntRef(caller)) 
-				return;
-		}
-
-		#if DEBUG
-			PrintToChatAll("OnEndTouch, caller: %d, activator: %d", caller, activator);
-		#endif
-		g_bClientInVehicle[activator] = false;
-	}
-}
-
-stock void StringToLowerCase(char[] input)
-{
-    for (int i = 0; i < strlen(input); i++)
-    {
-        input[i] = CharToLower(input[i]);
-    }
 }
 
 /* =============================================================================================================== *
@@ -1339,4 +1232,45 @@ void MoveForward(const float vPos[3], const float vAng[3], float vReturn[3], flo
 	vReturn[0] += vDir[0] * fDistance;
 	vReturn[1] += vDir[1] * fDistance;
 	vReturn[2] += vDir[2] * fDistance;
+}
+
+int FindRescueAreaTrigger()
+{
+	Address pArea = LoadFromAddress(TheNavMesh + view_as<Address>(g_iOffs_m_pRescueVehicleDepthArea), NumberType_Int32);
+	if (pArea == Address_Null)
+		return -1;
+	
+	float vecAreaCenter[3];
+	L4D_GetNavAreaCenter(pArea, vecAreaCenter);
+
+	float pos[3], mins[3], maxs[3];
+	int entity = MaxClients+1;
+
+	while ((entity = FindEntityByClassname(entity, "trigger_multiple")) != INVALID_ENT_REFERENCE)
+	{
+		if( !IsValidEntity(entity) )
+			continue;
+
+		if( GetEntProp(entity, Prop_Data, "m_iEntireTeam") != 2 )
+			continue;
+
+		if( !(GetEntProp(entity, Prop_Data, "m_spawnflags") & 1) )
+			continue;
+
+		GetEntPropVector(entity, Prop_Data, "m_vecAbsOrigin", pos);
+		GetEntPropVector(entity, Prop_Data, "m_vecMins", mins);
+		GetEntPropVector(entity, Prop_Data, "m_vecMaxs", maxs);
+
+		AddVectors(pos, mins, mins);
+		AddVectors(pos, maxs, maxs);
+
+		if (mins[0] <= vecAreaCenter[0] && vecAreaCenter[0] <= maxs[0]
+		 && mins[1] <= vecAreaCenter[1] && vecAreaCenter[1] <= maxs[1]
+		 && vecAreaCenter[2] <= pos[2])
+		{
+			return entity;
+		}
+	}
+
+	return -1;
 }
