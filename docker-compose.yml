@@ -19,7 +19,7 @@ services:
       - ./logs:/home/louis/l4d2/left4dead2/logs
       # Sourcemod
       - ./cfg/sourcemod/sourcemod.cfg:/cfg/sourcemod/sourcemod.cfg
-      - ./cfg/sourcemod/AI_HardSI:/cfg/sourcemod/AI_HardSI
+      - ./cfg/AI_HardSI:/cfg/AI_HardSI
       # Multislots
       - ./cfg/sourcemod/l4dmultislots.cfg:/cfg/sourcemod/l4dmultislots.cfg
       # Server Config
