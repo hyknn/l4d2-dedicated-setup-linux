@@ -4,38 +4,46 @@
 #include <sourcemod>
 #include <sdktools>
 
-#define PLUGIN_VERSION 				"1.0"
+#define PLUGIN_VERSION 				"1.0h-2024/12/13"
 
 public Plugin myinfo = 
 {
 	name 			= "[L4D1 & L4D2] CreateSurvivorBot",
-	author 			= "MicroLeo (port by Dragokas)",
-	description 	= "Provides CreateSurvivorBot Native",
+	author 			= "MicroLeo (port by Dragokas), Harry",
+	description 	= "Provide natives, spawn survivor bots without limit.",
 	version 		= PLUGIN_VERSION,
 	url 			= "https://github.com/dragokas"
 }
 
-Handle g_hSDK_RespawnPlayer;
-Handle g_hSDK_NextBotCreatePlayerBot;
-
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	CreateNative("NextBotCreatePlayerBotSurvivorBot", NATIVE_NextBotCreatePlayerBotSurvivorBot);
-	CreateNative("CTerrorPlayerRoundRespawn", NATIVE_CTerrorPlayerRoundRespawn);
+	EngineVersion test = GetEngineVersion();
+
+	if( test != Engine_Left4Dead2 && test != Engine_Left4Dead  )
+	{
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
+		return APLRes_SilentFailure;
+	}
+
+	CreateNative("CreateSurvivorBot", NATIVE_CreateSurvivorBot);
+	RegPluginLibrary("l4d_CreateSurvivorBot");
 	return APLRes_Success;
 }
 
+Handle g_hSDK_NextBotCreatePlayerBot;
+Handle g_hSDK_RespawnPlayer;
+
 public void OnPluginStart()
 {
-	GameData hGameData = LoadGameConfigFile("CreateSurvivorBot");
-	if( hGameData == null ) SetFailState("Could not find gamedata file at addons/sourcemod/gamedata/CreateSurvivorBot.txt , you FAILED AT INSTALLING");
-	
+	GameData hGameData = LoadGameConfigFile("l4d_CreateSurvivorBot");
+	if( hGameData == null ) SetFailState("Could not find gamedata file at addons/sourcemod/gamedata/l4d_CreateSurvivorBot.txt , you FAILED AT INSTALLING");
+
 	StartPrepSDKCall(SDKCall_Player);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorPlayer::RoundRespawn") == false )
 		SetFailState("Failed to find signature: CTerrorPlayer::RoundRespawn");
 	g_hSDK_RespawnPlayer = EndPrepSDKCall();
 	if( g_hSDK_RespawnPlayer == null ) SetFailState("Failed to create SDKCall: CTerrorPlayer::RoundRespawn");
-	
+
 	StartPrepSDKCall(SDKCall_Static);
 	Address addr = hGameData.GetAddress("NextBotCreatePlayerBot<SurvivorBot>");
 	if( addr == Address_Null ) SetFailState("Failed to find signature: NextBotCreatePlayerBot<SurvivorBot> in CDirector::AddSurvivorBot");
@@ -54,32 +62,16 @@ public void OnPluginStart()
 	delete hGameData;
 }
 
-public int NATIVE_NextBotCreatePlayerBotSurvivorBot(Handle plugin, int numParams)
+int NATIVE_CreateSurvivorBot(Handle plugin, int numParams)
 {
-	char szName[MAX_NAME_LENGTH];
-	
-	if( numParams == 1 )
-		GetNativeString(1, szName, sizeof(szName));
-	
-	return SDKCall(g_hSDK_NextBotCreatePlayerBot, NULL_STRING);
-}
+	if (GetClientCount(false) >= MaxClients)
+	{
+		//PrintToServer("[Bot] Not enough player slots");
+		return -1;
+	}
 
-public int NATIVE_CTerrorPlayerRoundRespawn(Handle plugin, int numParams)
-{
-	if( numParams < 1 )
-		ThrowNativeError(SP_ERROR_PARAM, "Invalid numParams");
-	
-	int bot = GetNativeCell(1);
-	SDKCall(g_hSDK_RespawnPlayer, bot);
-	return true;
-}
-
-/* // All-in-one sample:
-
-stock int CreateSurvivorBot()
-{
-	int bot = SDKCall(g_hSDK_NextBotCreatePlayerBot, NULL_STRING);
-	if( IsValidEntity(bot) )
+	int bot = SDKCall(g_hSDK_NextBotCreatePlayerBot, "I am Bot");
+	if( bot > 0 && IsValidEntity(bot) )
 	{
 		ChangeClientTeam(bot, 2);
 		
@@ -89,6 +81,6 @@ stock int CreateSurvivorBot()
 		}
 		return bot;
 	}
+
 	return -1;
 }
-*/
