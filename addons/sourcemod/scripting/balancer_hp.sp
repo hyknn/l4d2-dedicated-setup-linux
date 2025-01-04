@@ -1,9 +1,9 @@
 //#define DEBUG
 
 #define PLUGIN_NAME           "[L4D/L4D2] Balancer HP Special Infected"
-#define PLUGIN_AUTHOR         "z☣"
+#define PLUGIN_AUTHOR         "z☣; Slightly edited by mac"
 #define PLUGIN_DESCRIPTION    "Balances the HP of the Special Infecteds, depending on the number of Survivor players in game"
-#define PLUGIN_VERSION        "1.0"
+#define PLUGIN_VERSION        "1.1"
 #define PLUGIN_URL            ""
 
 #include <sourcemod>
@@ -47,6 +47,8 @@ ConVar cvar_hp_factor[9];
 
 ConVar cvar_tank_hp;
 ConVar cvar_si_health[9];
+
+ConVar cvar_difficulty;
 
 //ArrayList convar_hp;
 
@@ -113,6 +115,7 @@ public void OnPluginStart()
 	HookConVarChange(CreateConVar("z_smoker_health","250","Smoker health"), CvarChanged_SmokerHealth);
 	
 	cvar_tank_hp = FindConVar("z_tank_health");
+	cvar_difficulty = FindConVar("z_difficulty");
 	
 	for(int i=1; i < sizeof(cvar_si_health); i++){
 		char cvar_name[32];
@@ -148,7 +151,7 @@ public void CvarChanged_SmokerHealth(ConVar convar, const char[] oldValue, const
 {
 	SetConVarString(FindConVar("z_gas_health"), newValue);
 }
-//fix tank hp increment difficulty
+
 public Event_TankSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!IsEnable)
@@ -156,8 +159,20 @@ public Event_TankSpawn(Event event, const char[] name, bool dontBroadcast)
 		
 	int client = event.GetInt("tankid");
 	if(IsTank(client)){
-		SetPlayerHealth(client, cvar_tank_hp.IntValue);
-		//PrintToChatAll("set tank hp: %d", cvar_tank_hp.IntValue);
+		// Note that, there are other things that can modify Tank's health which this plugin will end up overwriting, like VScript's "ZombieTankHealth" (Tank Run mutation uses it)
+		// There might be a better way, but I don't have a good one yet - mac
+		char difficultyname[12];
+		GetConVarString(cvar_difficulty, difficultyname, sizeof difficultyname);
+		if(StrEqual(difficultyname, "Impossible", false) ) {
+			SetPlayerHealth(client, cvar_tank_hp.IntValue * 2);
+		}
+		else if(StrEqual(difficultyname, "Hard", false) ) {
+			SetPlayerHealth(client, cvar_tank_hp.IntValue + (cvar_tank_hp.IntValue / 2));
+		}
+		else {
+			SetPlayerHealth(client, cvar_tank_hp.IntValue);
+		}	
+	//	PrintToChatAll("\x04[DEBUG] \x05Tank \x03HP \x05is set to: \x03%d", GetEntProp(client, Prop_Send, "m_iHealth") );
 	}
 }
 
