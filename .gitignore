@@ -1,2 +1,7 @@
 
 .env
+/addons/workshop
+/logs
+/addons/sourcemod/data/dumps
+/addons/sourcemod/data/sqlite
+/addons/sourcemod/logs

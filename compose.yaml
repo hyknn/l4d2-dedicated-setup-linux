@@ -1,5 +1,3 @@
-version: "3.0"
-
 services:
   l4d2:
     build: .

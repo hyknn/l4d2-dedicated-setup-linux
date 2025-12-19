@@ -1,4 +1,4 @@
-FROM left4devops/l4d2
+FROM left4devops/l4d2:latest
 
 # Create the target directory in the container
 RUN mkdir -p "/home/louis/l4d2/left4dead2/cfg/sourcemod/"
