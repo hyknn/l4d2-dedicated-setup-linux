@@ -8,6 +8,7 @@ services:
       - REGION=4
       - STEAM_GROUP=${STEAMGROUP}
       - STEAM_GROUP_EXCLUSIVE=${EXCLUSIVE}
+      - EXTRA_ARGS="-debug"
       - DEFAULT_MAP=c1m1_hotel
     ports:
       - "27015:27015/tcp"
